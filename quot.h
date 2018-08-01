@@ -25,7 +25,9 @@ typedef struct
 	double tuneover;	/// 成交额
 	int volume;	/// 成交量
 	double open_interest;		/// 持仓量
-	
+	char update_time[9];		/// 最后修改时间
+	int update_msec;		/// 最后修改毫秒
+
 	/// 不变信息放在一起
 	double upper_limit;			/// 涨停板价
 	double lower_limit;			/// 跌停板价

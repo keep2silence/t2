@@ -29,5 +29,7 @@ main ()
 	engine_ptr->subscribe_md (contract_vec);
 
 	printf ("start ok.\n");
-	sleep (10000);
+	for (;;) {
+		sleep (100000);
+	}
 }

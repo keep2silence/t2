@@ -229,6 +229,8 @@ void ctp_md_engine::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthM
 	myquot.lower_limit        = pDepthMarketData->LowerLimitPrice;
 	myquot.trade_date         = atoi (pDepthMarketData->TradingDay);
 	memcpy (myquot.contract_name, pDepthMarketData->InstrumentID, 31);
+	myquot.update_msec        = pDepthMarketData->UpdateMillisec;
+	memcpy (myquot.update_time, pDepthMarketData->UpdateTime, 9);
 	
 	for (size_t i = 0; i < md_event_listener_vec.size (); ++i) {
 		md_event_listener_vec[0]->handle_quot (&myquot);
