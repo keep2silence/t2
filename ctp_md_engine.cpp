@@ -2,14 +2,26 @@
 #include "time_calc.h"
 #include <string.h>
 
-void ctp_md_engine::init ()
+void ctp_md_engine::init (std::string bid, std::string uid, std::string pass, std::string uri)
 {
-
+	broker_id = bid;
+	user_id = uid;
+	password = pass;
+	front_uri = uri;
 }
 
 void ctp_md_engine::start () 
 {
-
+	connect (1000l * 1000l * 1000l);
+	if (is_connected () == false) {
+		pr_info ("connect err.\n");
+		return;
+	}
+	login (1000l * 1000l * 1000l);
+	if (is_logged_in () == false) {
+		pr_info ("connect err.\n");
+		return;
+	}
 }
 
 void ctp_md_engine::stop ()

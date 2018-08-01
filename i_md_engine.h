@@ -20,7 +20,7 @@ public:
 	virtual ~i_md_engine ()
 	{}
 
-	virtual void init() = 0;
+	virtual void init(std::string bid, std::string uid, std::string pass, std::string uri) = 0;
 	virtual void start () = 0;
 	virtual void stop () = 0;
 

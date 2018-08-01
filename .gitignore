@@ -2,3 +2,7 @@
 *.a
 *.swp
 md_engine_test
+DialogRsp.con
+QueryRsp.con
+TradingDay.con
+core

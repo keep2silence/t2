@@ -14,7 +14,7 @@ public:
 	virtual ~ctp_md_engine ()
 	{}
 
-	virtual void init ();
+	virtual void init (std::string bid, std::string uid, std::string pass, std::string uri);
     virtual void start ();
     virtual void stop ();
 
@@ -43,16 +43,16 @@ private:
 
 private:
     /** ctp api */
-    CThostFtdcMdApi* api;
+    CThostFtdcMdApi* api = nullptr;
     /** internal information */
     std::string broker_id;
     std::string user_id;
     std::string password;
     std::string front_uri;
     // internal flags
-    bool connected;
-    bool logged_in;
-    int  reqId;
+    bool connected = false;
+    bool logged_in = false;
+    int  reqId = 0;
 
 public:
     // SPI
