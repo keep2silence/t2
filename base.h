@@ -63,9 +63,11 @@ public:
 	bool success = false;
 	int cancel_qty = 0;
 };
+
 class order_match_info_t
 {
 public:
 
 };
+
 #endif
