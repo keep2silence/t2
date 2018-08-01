@@ -6,6 +6,9 @@
 class i_engine
 {
 public:
+	virtual ~i_engine ()
+	{}
+
 	virtual void init() = 0;
 	virtual void start () = 0;
 	virtual void stop () = 0;

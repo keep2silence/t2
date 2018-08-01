@@ -19,9 +19,7 @@ public:
 	virtual ~i_md_engine ()
 	{}
 
-	virtual void subscribe_md (std::vector<std::string> contract_vec) = 0;
-	virtual void subscribe_l2_md (std::vector<std::string> contract_vec) = 0;
-	
+	virtual void subscribe_md (const std::vector<std::string>&) = 0;
 
 	bool register_md_event_listener (md_event_listener* listener_ptr)
 	{

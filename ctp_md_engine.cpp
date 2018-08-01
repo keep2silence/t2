@@ -2,7 +2,7 @@
 #include "time_calc.h"
 #include <string.h>
 
-void ctp_md_engine::init (void *)
+void ctp_md_engine::init ()
 {
 
 }

@@ -8,7 +8,10 @@
 class ctp_md_engine : public i_md_engine, public CThostFtdcMdSpi
 {
 public:
-	virtual void init (void *);
+	virtual ~ctp_md_engine ()
+	{}
+
+	virtual void init ();
     virtual void start ();
 
     virtual void stop ();
