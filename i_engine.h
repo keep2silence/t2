@@ -1,6 +1,8 @@
 #ifndef __I_ENGINE_H__
 #define __I_ENGINE_H__
 
+#include <string>
+
 class i_engine
 {
 public:
@@ -21,7 +23,7 @@ public:
     /** return true if all accounts have been logged in */
     virtual bool is_logged_in() const = 0;
     /** get engine's name */
-    virtual string name() const = 0;
+    virtual std::string name() const = 0;
 };
 
 #endif

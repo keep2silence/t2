@@ -30,7 +30,7 @@ typedef struct
 	double upper_limit;			/// 涨停板价
 	double lower_limit;			/// 跌停板价
 	int trade_date;
-	const char contract_name[32];
+	char contract_name[32];
 } quot_t;
 
 #endif

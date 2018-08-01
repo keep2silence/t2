@@ -2,7 +2,7 @@
 #define __CTP_MD_ENGINE_H__
 
 #include "ThostFtdcMdApi.h"
-
+#include <vector>
 #include "i_md_engine.h"
 
 class ctp_md_engine : public i_md_engine, public CThostFtdcMdSpi
@@ -28,17 +28,16 @@ public:
     /** get engine's name */
     virtual std::string name() const;
 
-    virtual void subscribe_md (std::vector<std::string> contract_vec);
-    virtual void subscribe_l2_md (std::vector<std::string> contract_vec);
+    virtual void subscribe_md (const std::vector<std::string>& instruments);
 
 private:
     /** ctp api */
     CThostFtdcMdApi* api;
     /** internal information */
-    string broker_id;
-    string user_id;
-    string password;
-    string front_uri;
+    std::string broker_id;
+    std::string user_id;
+    std::string password;
+    std::string front_uri;
     // internal flags
     bool connected;
     bool logged_in;

@@ -4,15 +4,14 @@
 #include <vector>
 #include <string>
 #include "base.h"
+#include "quot.h"
 #include "i_engine.h"
-
-class quot_t;
 
 struct md_event_listener 
 {
-	void handle_quot (quot_t* quot_ptr) = 0;
+	virtual void handle_quot (quot_t* quot_ptr) = 0;
 	std::string listener_name;
-}
+};
 
 class i_md_engine : public i_engine
 {
@@ -43,8 +42,9 @@ public:
 				listener_ptr->listener_name.c_str ());
 	}
 
-private:
+protected:
 	std::vector<md_event_listener *> md_event_listener_vec;
+	quot_t myquot;
 };
 
 #endif
