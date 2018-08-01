@@ -39,7 +39,7 @@ static struct timespec tm_begin, tm_end;
 #define BEGIN_CALC_TIME clock_gettime (CLOCK_MONOTONIC, &tm_begin)
 #define END_CALC_TIME clock_gettime (CLOCK_MONOTONIC, &tm_end)
 
-static long int get_nanosec ()
+static long int nanosec ()
 {
 	struct timespec tm;
 	clock_gettime (CLOCK_MONOTONIC, &tm);
