@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "base.h"
+#include "i_engine.h"
 
 class quot_t;
 
@@ -13,14 +14,12 @@ struct md_event_listener
 	std::string listener_name;
 }
 
-class i_md_engine 
+class i_md_engine : public i_engine
 {
 public:
 	virtual ~i_md_engine ()
 	{}
 
-	virtual void init (void *) = 0;
-	virtual void start () = 0;
 	virtual void subscribe_md (std::vector<std::string> contract_vec) = 0;
 	virtual void subscribe_l2_md (std::vector<std::string> contract_vec) = 0;
 	
