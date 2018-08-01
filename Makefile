@@ -7,7 +7,7 @@ libengine.a: ctp_md_engine.o
 	ranlib $@
 
 md_engine_test: libengine.a md_engine_test.o
-	g++ -o $@ $^ -g
+	g++ -o $@ $^ -g ./api/ctp/latest/lib/libthostmduserapi.so
 
 clean:
 	rm -f *.o libengine.a

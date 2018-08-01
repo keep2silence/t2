@@ -5,44 +5,44 @@
 #include <string>
 #include "base.h"
 #include "quot.h"
-#include "i_engine.h"
 
 struct md_event_listener 
 {
+	virtual ~md_event_listener ()
+	{}
 	virtual void handle_quot (quot_t* quot_ptr) = 0;
 	std::string listener_name;
 };
 
-class i_md_engine : public i_engine
+class i_md_engine
 {
 public:
 	virtual ~i_md_engine ()
 	{}
 
+	virtual void init() = 0;
+	virtual void start () = 0;
+	virtual void stop () = 0;
+
+    /** use api to connect to front */
+    virtual void connect(long timeout_nsec) = 0;
+    /** use api to log in account */
+    virtual void login(long timeout_nsec) = 0;
+    /** use api to log out */
+    virtual void logout() = 0;
+    /** release api*/
+    virtual void release_api() = 0;
+    /** return true if engine connected to server */
+    virtual bool is_connected() const = 0;
+    /** return true if all accounts have been logged in */
+    virtual bool is_logged_in() const = 0;
+    /** get engine's name */
+    virtual std::string name() const = 0;
+
+
 	virtual void subscribe_md (const std::vector<std::string>&) = 0;
 
-	bool register_md_event_listener (md_event_listener* listener_ptr)
-	{
-		if (listener_ptr == nullptr) {
-			return false;
-		}
-
-		for (size_t i = 0; i < md_event_listener_vec.size (); ++i) {
-			if (listener_ptr == md_event_listener_vec[i]) {
-				pr_error ("listener: %s had been registered.\n", 
-					listener_ptr->listener_name.c_str ());
-				return false;
-			}
-		}
-
-		md_event_listener_vec.push_back (listener_ptr);
-		pr_info ("listener: %s register ok.\n",
-				listener_ptr->listener_name.c_str ());
-	}
-
-protected:
-	std::vector<md_event_listener *> md_event_listener_vec;
-	quot_t myquot;
+	virtual bool register_md_event_listener (md_event_listener* listener_ptr) = 0;
 };
 
 #endif
