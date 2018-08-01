@@ -3,7 +3,7 @@
 
 class ctp_md_engine : public i_md_engine
 {
-
+public:
 };
 
 #endif
