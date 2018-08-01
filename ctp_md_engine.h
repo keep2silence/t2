@@ -16,7 +16,6 @@ public:
 
 	virtual void init ();
     virtual void start ();
-
     virtual void stop ();
 
     /** use api to connect to front */
@@ -36,25 +35,7 @@ public:
 
     virtual void subscribe_md (const std::vector<std::string>& instruments);
 
-	virtual bool register_md_event_listener (md_event_listener* listener_ptr)
-    {
-        if (listener_ptr == nullptr) {
-            return false;
-        }
-
-        for (size_t i = 0; i < md_event_listener_vec.size (); ++i) {
-            if (listener_ptr == md_event_listener_vec[i]) {
-                pr_error ("listener: %s had been registered.\n",
-                    listener_ptr->listener_name.c_str ());
-                return false;
-            }
-        }
-
-        md_event_listener_vec.push_back (listener_ptr);
-        pr_info ("listener: %s register ok.\n",
-                listener_ptr->listener_name.c_str ());
-        return true;
-    }
+	virtual bool register_md_event_listener (md_event_listener* listener_ptr);
 
 private:
     std::vector<md_event_listener *> md_event_listener_vec;

@@ -12,6 +12,10 @@ void ctp_md_engine::start ()
 
 }
 
+void ctp_md_engine::stop ()
+{
+}
+
 void ctp_md_engine::connect (long timeout_nsec)
 {
 	if (api == nullptr) {
@@ -74,6 +78,23 @@ void ctp_md_engine::release_api()
     }
 }
 
+bool ctp_md_engine::is_connected() const
+{
+	return connected;
+}
+
+/** return true if all accounts have been logged in */
+bool ctp_md_engine::is_logged_in() const
+{
+	return logged_in;
+}
+
+/** get engine's name */
+std::string ctp_md_engine::name() const
+{
+	return std::string ("ctp_md_engine");
+}
+
 void ctp_md_engine::subscribe_md (const std::vector<std::string>& instruments)
 {
     int nCount = instruments.size();
@@ -82,6 +103,28 @@ void ctp_md_engine::subscribe_md (const std::vector<std::string>& instruments)
         insts[i] = (char*)instruments[i].c_str();
     api->SubscribeMarketData(insts, nCount);
 }
+
+bool ctp_md_engine::register_md_event_listener (md_event_listener* listener_ptr)
+{
+	if (listener_ptr == nullptr) {
+		return false;
+	}
+
+	for (size_t i = 0; i < md_event_listener_vec.size (); ++i) {
+		if (listener_ptr == md_event_listener_vec[i]) {
+			pr_error ("listener: %s had been registered.\n",
+					listener_ptr->listener_name.c_str ());
+			return false;
+		}
+	}
+
+	md_event_listener_vec.push_back (listener_ptr);
+	pr_info ("listener: %s register ok.\n",
+			listener_ptr->listener_name.c_str ());
+	return true;
+}
+
+
 
 /*
  * SPI functions
@@ -98,8 +141,6 @@ void ctp_md_engine::OnFrontDisconnected(int nReason)
     connected = false;
     logged_in = false;
 }
-
-#define GBK2UTF8(msg) msg
 
 void ctp_md_engine::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
