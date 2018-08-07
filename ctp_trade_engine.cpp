@@ -1,4 +1,6 @@
 #include "ctp_trade_engine.h"
+#include "time_calc.h"
+#include <string.h>
 
 void ctp_trade_engine::init ()
 {
@@ -110,12 +112,11 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.auth_rid = request_id;
             if (unit.api->ReqAuthenticate(&req, request_id++))
             {
-                pr_error ("[request] auth failed!" << " (Bid)" << req.BrokerID
-                                                              << " (Uid)" << req.UserID
-                                                              << " (Auth)" << req.AuthCode);
+                pr_error ("[request] auth failed!(Broker_id: %d), uid: %d, auth: %d\n",
+					req.BrokerID, req.UserID, req.AuthCode);
             }
-            long start_time = yijinjing::getNanoTime();
-            while (!unit.authenticated && yijinjing::getNanoTime() - start_time < timeout_nsec)
+            long start_time = nanosec ();
+            while (!unit.authenticated && nanosec () - start_time < timeout_nsec)
             {}
         }
         // login
@@ -129,11 +130,11 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.login_rid = request_id;
             if (unit.api->ReqUserLogin(&req, request_id++))
             {
-                pr_error ("[request] login failed!" << " (Bid)" << req.BrokerID
-                                                               << " (Uid)" << req.UserID);
+                pr_error ("[request] login failed! broker_id: %d, uid: %d\n",
+					 req.BrokerID, req.UserID);
             }
-            long start_time = yijinjing::getNanoTime();
-            while (!unit.logged_in && yijinjing::getNanoTime() - start_time < timeout_nsec)
+            long start_time = nanosec ();
+            while (!unit.logged_in && nanosec () - start_time < timeout_nsec)
             {}
         }
         // confirm settlement
@@ -145,11 +146,11 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.settle_rid = request_id;
             if (unit.api->ReqSettlementInfoConfirm(&req, request_id++))
             {
-                pr_error ("[request] settlement info failed!" << " (Bid)" << req.BrokerID
-                                                                         << " (Iid)" << req.InvestorID);
+                pr_error ("[request] settlement info failed!(Broker_id: %d), Investorid: %d",
+					 req.BrokerID, req.InvestorID);
             }
-            long start_time = yijinjing::getNanoTime();
-            while (!unit.settle_confirmed && yijinjing::getNanoTime() - start_time < timeout_nsec)
+            long start_time = nanosec ();
+            while (!unit.settle_confirmed && nanosec () - start_time < timeout_nsec)
             {}
         }
     }
@@ -169,8 +170,8 @@ void ctp_trade_engine::logout()
             unit.login_rid = request_id;
             if (unit.api->ReqUserLogout(&req, request_id++))
             {
-                pr_error ("[request] logout failed!" << " (Bid)" << req.BrokerID
-                                                                << " (Uid)" << req.UserID);
+                pr_error ("[request] logout failed!(broker_id: %d), uid: %s",
+					req.BrokerID, req.UserID);
             }
         }
         unit.authenticated = false;
@@ -223,22 +224,20 @@ bool ctp_trade_engine::is_connected() const
 void ctp_trade_engine::req_investor_position(const LFQryPositionField* data, int account_index, int requestId)
 {
     struct CThostFtdcQryInvestorPositionField req = parseTo(*data);
-    KF_LOG_DEBUG(logger, "[req_pos]" << " (Bid)" << req.BrokerID
-                                     << " (Iid)" << req.InvestorID
-                                     << " (Tid)" << req.InstrumentID);
+    pr_debug ("[req_pos](Broker_id: %d, investorid: %d, Instrumentid: %d)",
+		req.BrokerID, req.InvestorID, req.InstrumentID);
 
     if (account_units[account_index].api->ReqQryInvestorPosition(&req, requestId))
     {
-        pr_error ("[request] investor position failed!" << " (rid)" << requestId
-                                                                   << " (idx)" << account_index);
+        pr_error ("[request] investor position failed! (rid: %d), account_idx: %d", 
+			requestId, account_index);
     }
-    send_writer->write_frame(&req, sizeof(CThostFtdcQryInvestorPositionField), source_id, MSG_TYPE_LF_QRY_POS_CTP, 1/*ISLAST*/, requestId);
 }
 
 void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int account_index, int requestId)
 {
     struct CThostFtdcQryTradingAccountField req = parseTo(*data);
-    KF_LOG_DEBUG(logger, "[req_account]" << " (Bid)" << req.BrokerID
+    pr_debug ("[req_account]" << " (Bid)" << req.BrokerID
                                          << " (Iid)" << req.InvestorID);
 
     if (account_units[account_index].api->ReqQryTradingAccount(&req, requestId))
@@ -246,7 +245,6 @@ void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int accoun
         pr_error ("[request] account info failed!" << " (rid)" << requestId
                                                               << " (idx)" << account_index);
     }
-    send_writer->write_frame(&req, sizeof(CThostFtdcQryTradingAccountField), source_id, MSG_TYPE_LF_QRY_ACCOUNT_CTP, 1/*ISLAST*/, requestId);
 }
 
 void ctp_trade_engine::req_order_insert(const LFInputOrderField* data, int account_index, int requestId, long rcv_time)
@@ -255,7 +253,7 @@ void ctp_trade_engine::req_order_insert(const LFInputOrderField* data, int accou
     req.RequestID = requestId;
     req.IsAutoSuspend = 0;
     req.UserForceClose = 0;
-    KF_LOG_DEBUG(logger, "[req_order_insert]" << " (rid)" << requestId
+    pr_debug ("[req_order_insert]" << " (rid)" << requestId
                                               << " (Iid)" << req.InvestorID
                                               << " (Tid)" << req.InstrumentID
                                               << " (OrderRef)" << req.OrderRef);
@@ -264,7 +262,6 @@ void ctp_trade_engine::req_order_insert(const LFInputOrderField* data, int accou
     {
         pr_error ("[request] order insert failed!" << " (rid)" << requestId);
     }
-    send_writer->write_frame(&req, sizeof(CThostFtdcInputOrderField), source_id, MSG_TYPE_LF_ORDER_CTP, 1/*ISLAST*/, requestId);
 }
 
 void ctp_trade_engine::req_order_action(const LFOrderActionField* data, int account_index, int requestId, long rcv_time)
@@ -274,17 +271,14 @@ void ctp_trade_engine::req_order_action(const LFOrderActionField* data, int acco
     auto& unit = account_units[account_index];
     req.FrontID = unit.front_id;
     req.SessionID = unit.session_id;
-    KF_LOG_DEBUG(logger, "[req_order_action]" << " (rid)" << requestId
-                                              << " (Iid)" << req.InvestorID
-                                              << " (OrderRef)" << req.OrderRef
-                                              << " (OrderActionRef)" << req.OrderActionRef);
+    pr_debug ("[req_order_action](rid: %d, investorid: %d, order_ref: %d, OrderActionRef: %d)",
+			requestId, req.InvestorID, req.OrderRef, req.OrderActionRef);
 
     if (unit.api->ReqOrderAction(&req, requestId))
     {
-        pr_error ("[request] order action failed!" << " (rid)" << requestId);
+        pr_error ("[request] order action failed!(requestid: %d)", requestId);
     }
 
-    send_writer->write_frame(&req, sizeof(CThostFtdcInputOrderActionField), source_id, MSG_TYPE_LF_ORDER_ACTION_CTP, 1/*ISLAST*/, requestId);
 }
 
 

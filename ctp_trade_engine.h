@@ -5,6 +5,7 @@
 #include "ThostFtdcTraderApi.h"
 #include "i_trade_engine.h"
 #include "base.h"
+#include "order.h"
 
 /**
  * account information unit extra for CTP is here.
@@ -58,11 +59,11 @@ public:
 
 
     // from config
-    string front_uri;
+    std::string front_uri;
     bool need_settleConfirm;
     bool need_authenticate;
     int curAccountIdx;
-    vector<AccountUnitCTP> account_units;
+    std::vector<AccountUnitCTP> account_units;
 
 public:
     // SPI

@@ -96,6 +96,24 @@ struct LFQryAccountField
     char        InvestorID[20];            //投资者代码
 };
 
+
+struct LFOrderActionField
+{
+    char        BrokerID[12];              //经纪公司代码
+    char        InvestorID[20];            //投资者代码
+    char        InstrumentID[32];          //合约代码
+    char        ExchangeID[12];            //交易所代码
+    char        UserID[16];                //用户代码
+    char        OrderRef[22];              //报单引用
+    char        OrderSysID[32];            //报单编号
+    int         RequestID;             //请求编号
+    char        ActionFlag;            //报单操作标志
+    double      LimitPrice;            //价格
+    int         VolumeChange;          //数量变化
+    int         KfOrderID;             //Kf系统内订单ID
+};
+
+
 typedef double price_t;
 
 #endif
