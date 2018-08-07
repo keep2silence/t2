@@ -70,4 +70,32 @@ public:
 
 };
 
+struct LFQryPositionField
+{
+    char     BrokerID[12];              //经纪公司代码
+    char     InvestorID[20];            //投资者代码
+    char     InstrumentID[32];          //合约代码
+    char     ExchangeID[10];            //交易所代码
+};
+
+struct LFRspPositionField
+{
+    char                    InstrumentID[32];          //合约代码
+    int                     YdPosition;            //上日持仓
+    int                     Position;              //总持仓
+    char                    BrokerID[12];              //经纪公司代码
+    char                    InvestorID[20];            //投资者代码
+    double                  PositionCost;          //持仓成本
+    char                    HedgeFlag;             //投机套保标志
+    char                    PosiDirection;         //持仓多空方向
+};
+
+struct LFQryAccountField
+{
+    char        BrokerID[12];              //经纪公司代码
+    char        InvestorID[20];            //投资者代码
+};
+
+typedef double price_t;
+
 #endif

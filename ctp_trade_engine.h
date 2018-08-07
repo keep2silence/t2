@@ -3,6 +3,8 @@
 
 #include <string>
 #include "ThostFtdcTraderApi.h"
+#include "i_trade_engine.h"
+#include "base.h"
 
 /**
  * account information unit extra for CTP is here.
@@ -37,7 +39,7 @@ public:
     virtual void init();
     /** for settleconfirm and authenticate setting */
     /// virtual void pre_load(const json& j_config);
-    virtual TradeAccount load_account(int idx, const json& j_account);
+    virtual TradeAccount load_account(int idx, std::string&);
     virtual void resize_accounts(int account_num);
     /** connect && login related */
     virtual void connect(long timeout_nsec);
@@ -46,13 +48,12 @@ public:
     virtual void release_api();
     virtual bool is_connected() const;
     virtual bool is_logged_in() const;
-    virtual string name() const { return "ctp_trade_engine"; };
-
+    virtual std::string name() const { return "ctp_trade_engine"; };
 
 	// req functions
-    virtual void req_investor_position(const LFQryPositionField* data, int account_index, int requestId);
+    virtual void req_investor_position(LFQryPositionField* data, int account_index, int requestId);
     virtual void req_qry_account(const LFQryAccountField* data, int account_index, int requestId);
-    virtual void req_order_insert(const LFInputOrderField* data, int account_index, int requestId, long rcv_time);
+    virtual void req_order_insert(const order_t* order_ptr, int account_index, int requestId, long rcv_time);
     virtual void req_order_action(const LFOrderActionField* data, int account_index, int requestId, long rcv_time);
 
 

@@ -14,18 +14,27 @@ public:
     virtual void handle_order_rsp (order_rsp_info_t* order_rsp_info_ptr) = 0;
     virtual void handle_cancel_rsp (cancel_rsp_info_t* cancel_rsp_info_ptr) = 0;
     virtual void handle_match_rsp (order_match_info_t* order_match_info_ptr) = 0;
+
+	std::string listener_name;
 };
 
+#if 1
 /// 支持多账号同时登录
-struct trade_account
+/**
+ * Trade account information,
+ * used when connect or login
+ */
+struct TradeAccount
 {
-    char broker_id[19];
-    char user_id[16];
-    char investor_id[19];
-    /// char BusinessUnit[21];
-    char password[21];
+    char BrokerID[19];
+    char UserID[16];
+    char InvestorID[19];
+    char BusinessUnit[21];
+    char Password[21];
+    /// FeeHandlerPtr fee_handler;
 };
 
+#endif
 
 class i_trade_engine 
 {
@@ -77,14 +86,14 @@ public:
 	
 	/// 下单
 	virtual int place_order (int contract_id, direction_t direction, 
-		offset_t offset, price_t price, int qty) = 0;
+		offset_flag_t offset, price_t price, int qty) = 0;
 
 	/// 撤单
 	virtual int cancel_order (int order_id) = 0;
 
 protected:
 	std::vector<trade_event_listener *> trade_event_listener_vec;
-	std::vector<trade_account> accounts;
+	std::vector<TradeAccount> accounts;
     /** request_id, incremental*/
     int request_id;
     /** local id, incremental */
@@ -96,11 +105,6 @@ protected:
 	order_rsp_info_t* order_rsp_ptr = nullptr;
 	cancel_rsp_info_t* cancel_rsp_ptr = nullptr;
 	order_match_info_t* order_match_ptr = nullptr;
-};
-
-class i_trade_engine 
-{
-
 };
 
 #endif
