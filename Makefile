@@ -2,7 +2,7 @@ CPPFLAGS=-g -I./api/ctp/latest/include/ -std=c++11 -Wall -Wextra -Wno-unused-par
 
 all: libengine.a md_engine_test
 
-libengine.a: ctp_md_engine.o
+libengine.a: ctp_md_engine.o ctp_trade_engine.o
 	ar rv $@ $^
 	ranlib $@
 

@@ -31,7 +31,8 @@ void ctp_md_engine::stop ()
 void ctp_md_engine::connect (long timeout_nsec)
 {
 	if (api == nullptr) {
-		api = CThostFtdcMdApi::CreateFtdcMdApi();
+		api = CThostFtdcMdApi::CreateFtdcMdApi("/tmp/");
+		/// api = CThostFtdcMdApi::CreateFtdcMdApi();
 		if (api == nullptr) {
 			pr_emerg ("CTP_MD failed to create api");
 		}
