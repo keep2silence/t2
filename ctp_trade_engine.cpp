@@ -34,13 +34,27 @@ void ctp_trade_engine::resize_accounts(int account_num)
     account_units.resize(account_num);
 }
 
+static void split_to_vector (std::string& line, std::vector<std::string> &stdvec, char sep)
+{
+    stdvec.clear ();
+    std::string::size_type pos;
+    while ((pos = line.find_first_of (sep)) != std::string::npos) {
+        std::string str (line.substr (0, pos));
+        stdvec.push_back (str);
+        line = line.substr (pos + 1);
+    }
+    stdvec.push_back (line);
+}
+
 TradeAccount ctp_trade_engine::load_account(int idx, std::string user_config_str)
 {
+	std::vector<std::string> user_config_vec;
+	split_to_vector (user_config_str, user_config_vec, ',');
     // internal load
-    string broker_id = 
-    string user_id = 
-    string investor_id = 
-    string password = 
+    std::string broker_id = user_config_vec[0];
+    std::string user_id = user_config_vec[1];
+    std::string investor_id = user_config_vec[2];
+    std::string password = user_config_vec[3];
 
     AccountUnitCTP& unit = account_units[idx];
     unit.api = nullptr;
@@ -52,7 +66,7 @@ TradeAccount ctp_trade_engine::load_account(int idx, std::string user_config_str
     unit.logged_in = false;
     unit.settle_confirmed = false;
     if (need_authenticate)
-        unit.auth_code = 
+        unit.auth_code = user_config_vec[4];
 
     // set up
     TradeAccount account = {};
@@ -73,7 +87,7 @@ void ctp_trade_engine::connect(long timeout_nsec)
             CThostFtdcTraderApi* api = CThostFtdcTraderApi::CreateFtdcTraderApi();
             if (!api)
             {
-                throw std::runtime_error("CTP_TD failed to create api");
+                pr_error ("CTP_TD failed to create api");
             }
             api->RegisterSpi(this);
             unit.api = api;
@@ -112,7 +126,7 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.auth_rid = request_id;
             if (unit.api->ReqAuthenticate(&req, request_id++))
             {
-                pr_error ("[request] auth failed!(Broker_id: %d), uid: %d, auth: %d\n",
+                pr_error ("[request] auth failed!(Broker_id: %s), uid: %s, auth: %s\n",
 					req.BrokerID, req.UserID, req.AuthCode);
             }
             long start_time = nanosec ();
@@ -130,7 +144,7 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.login_rid = request_id;
             if (unit.api->ReqUserLogin(&req, request_id++))
             {
-                pr_error ("[request] login failed! broker_id: %d, uid: %d\n",
+                pr_error ("[request] login failed! broker_id: %s, uid: %s\n",
 					 req.BrokerID, req.UserID);
             }
             long start_time = nanosec ();
@@ -146,7 +160,7 @@ void ctp_trade_engine::login(long timeout_nsec)
             unit.settle_rid = request_id;
             if (unit.api->ReqSettlementInfoConfirm(&req, request_id++))
             {
-                pr_error ("[request] settlement info failed!(Broker_id: %d), Investorid: %d",
+                pr_error ("[request] settlement info failed!(Broker_id: %s), Investorid: %s\n",
 					 req.BrokerID, req.InvestorID);
             }
             long start_time = nanosec ();
@@ -170,7 +184,7 @@ void ctp_trade_engine::logout()
             unit.login_rid = request_id;
             if (unit.api->ReqUserLogout(&req, request_id++))
             {
-                pr_error ("[request] logout failed!(broker_id: %d), uid: %s",
+                pr_error ("[request] logout failed!(broker_id: %s), uid: %s",
 					req.BrokerID, req.UserID);
             }
         }
@@ -218,6 +232,7 @@ bool ctp_trade_engine::is_connected() const
     return true;
 }
 
+#if 0
 /**
  * req functions
  */
@@ -246,21 +261,21 @@ void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int accoun
                                                               << " (idx)" << account_index);
     }
 }
+#endif
 
-void ctp_trade_engine::req_order_insert(const LFInputOrderField* data, int account_index, int requestId, long rcv_time)
+void ctp_trade_engine::req_order_insert(const order_t* order_ptr, 
+	int account_index, int requestId, long rcv_time)
 {
     struct CThostFtdcInputOrderField req = parseTo(*data);
     req.RequestID = requestId;
     req.IsAutoSuspend = 0;
     req.UserForceClose = 0;
-    pr_debug ("[req_order_insert]" << " (rid)" << requestId
-                                              << " (Iid)" << req.InvestorID
-                                              << " (Tid)" << req.InstrumentID
-                                              << " (OrderRef)" << req.OrderRef);
+    pr_debug ("req_order_insert requestid: %d, invectorid: %s, instrumentid: %s, order_ref: %s.\n",
+		 requestId, req.InvestorID, req.InstrumentID, req.OrderRef);
 
     if (account_units[account_index].api->ReqOrderInsert(&req, requestId))
     {
-        pr_error ("[request] order insert failed!" << " (rid)" << requestId);
+        pr_error ("[request] order insert failed (rid: %d)\n", requestId);
     }
 }
 
@@ -271,7 +286,7 @@ void ctp_trade_engine::req_order_action(const LFOrderActionField* data, int acco
     auto& unit = account_units[account_index];
     req.FrontID = unit.front_id;
     req.SessionID = unit.session_id;
-    pr_debug ("[req_order_action](rid: %d, investorid: %d, order_ref: %d, OrderActionRef: %d)",
+    pr_debug ("[req_order_action](requestid: %d, investorid: %s, order_ref: %s, OrderActionRef: %d)\n",
 			requestId, req.InvestorID, req.OrderRef, req.OrderActionRef);
 
     if (unit.api->ReqOrderAction(&req, requestId))
@@ -281,33 +296,18 @@ void ctp_trade_engine::req_order_action(const LFOrderActionField* data, int acco
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * SPI functions
  */
 void ctp_trade_engine::OnFrontConnected()
 {
-    pr_info ("[OnFrontConnected] (idx)" << curAccountIdx);
+    pr_info ("[OnFrontConnected] (idx: %d)\n", curAccountIdx);
     account_units[curAccountIdx].connected = true;
 }
 
 void ctp_trade_engine::OnFrontDisconnected(int nReason)
 {
-    pr_info ("[OnFrontDisconnected] reason=" << nReason);
+    pr_info ("[OnFrontDisconnected] reason=%d\n", nReason);
     for (auto& unit: account_units)
     {
         unit.connected = false;
@@ -329,8 +329,8 @@ void ctp_trade_engine::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAut
     }
     else
     {
-        pr_info ("[OnRspAuthenticate](userId: %d), brokerid: %d, product: %d, rid: %d\n",
-			 pRspAuthenticateField->UserID, pRspAuthenticateField->BrokerID
+        pr_info ("[OnRspAuthenticate](userId: %s), brokerid: %s, product: %s, request_id: %d\n",
+			 pRspAuthenticateField->UserID, pRspAuthenticateField->BrokerID,
              pRspAuthenticateField->UserProductInfo, nRequestID);
         for (auto& unit: account_units)
         {
@@ -350,7 +350,7 @@ void ctp_trade_engine::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin
     }
     else
     {
-        pr_info ("[OnRspUserLogin] (broker_id: %d), uid: %d, max_order_ref: %d, front_id: %d, session_id: %d\n",
+        pr_info ("[OnRspUserLogin] (broker_id: %s), uid: %s, max_order_ref: %s, front_id: %d, session_id: %d\n",
 			pRspUserLogin->BrokerID, pRspUserLogin->UserID, pRspUserLogin->MaxOrderRef,
 			pRspUserLogin->FrontID, pRspUserLogin->SessionID);
         for (auto& unit: account_units)
@@ -377,8 +377,8 @@ void ctp_trade_engine::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfir
     }
     else
     {
-        pr_info ("[OnRspSettlementInfoConfirm](brokerID: %d), investorID: %d, confirmDate: %d, confirmTime: %d\n",  
-			pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID
+        pr_info ("[OnRspSettlementInfoConfirm](brokerID: %s), investorID: %s, confirmDate: %s, confirmTime: %s\n",  
+			pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID,
             pSettlementInfoConfirm->ConfirmDate, pSettlementInfoConfirm->ConfirmTime);
         for (auto& unit: account_units)
         {
@@ -434,7 +434,7 @@ void ctp_trade_engine::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputO
     const char* errorMsg = (pRspInfo == nullptr) ? nullptr : EngineUtil::gbkErrorMsg2utf8(pRspInfo->ErrorMsg);
     auto data = parseFrom(*pInputOrderAction);
     on_rsp_order_action(&data, nRequestID, errorId, errorMsg);
-    raw_writer->write_error_frame(pInputOrderAction, sizeof(CThostFtdcInputOrderActionField), source_id, MSG_TYPE_LF_ORDER_ACTION_CTP, bIsLast, nRequestID, errorId, errorMsg);
+    /// raw_writer->write_error_frame(pInputOrderAction, sizeof(CThostFtdcInputOrderActionField), source_id, MSG_TYPE_LF_ORDER_ACTION_CTP, bIsLast, nRequestID, errorId, errorMsg);
 }
 
 void ctp_trade_engine::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo,
@@ -447,24 +447,24 @@ void ctp_trade_engine::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField 
         pInvestorPosition = &emptyCtp;
     auto pos = parseFrom(*pInvestorPosition);
     on_rsp_position(&pos, bIsLast, nRequestID, errorId, errorMsg);
-    raw_writer->write_error_frame(pInvestorPosition, sizeof(CThostFtdcInvestorPositionField), source_id, MSG_TYPE_LF_RSP_POS_CTP, bIsLast, nRequestID, errorId, errorMsg);
+    /// raw_writer->write_error_frame(pInvestorPosition, sizeof(CThostFtdcInvestorPositionField), source_id, MSG_TYPE_LF_RSP_POS_CTP, bIsLast, nRequestID, errorId, errorMsg);
 }
 
 void ctp_trade_engine::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
     auto rtn_order = parseFrom(*pOrder);
     on_rtn_order(&rtn_order);
-    raw_writer->write_frame(pOrder, sizeof(CThostFtdcOrderField),
-                            source_id, MSG_TYPE_LF_RTN_ORDER_CTP,
-                            1/*islast*/, (pOrder->RequestID > 0) ? pOrder->RequestID: -1);
+    /// raw_writer->write_frame(pOrder, sizeof(CThostFtdcOrderField),
+     ///                       source_id, MSG_TYPE_LF_RTN_ORDER_CTP,
+        ///                    1/*islast*/, (pOrder->RequestID > 0) ? pOrder->RequestID: -1);
 }
 
 void ctp_trade_engine::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
     auto rtn_trade = parseFrom(*pTrade);
     on_rtn_trade(&rtn_trade);
-    raw_writer->write_frame(pTrade, sizeof(CThostFtdcTradeField),
-                            source_id, MSG_TYPE_LF_RTN_TRADE_CTP, 1/*islast*/, -1/*invalidRid*/);
+    /// raw_writer->write_frame(pTrade, sizeof(CThostFtdcTradeField),
+       ///                     source_id, MSG_TYPE_LF_RTN_TRADE_CTP, 1/*islast*/, -1/*invalidRid*/);
 }
 
 void ctp_trade_engine::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount,
@@ -477,5 +477,5 @@ void ctp_trade_engine::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTr
         pTradingAccount = &empty;
     auto account = parseFrom(*pTradingAccount);
     on_rsp_account(&account, bIsLast, nRequestID, errorId, errorMsg);
-    raw_writer->write_error_frame(pTradingAccount, sizeof(CThostFtdcTradingAccountField), source_id, MSG_TYPE_LF_RSP_ACCOUNT_CTP, bIsLast, nRequestID, errorId, errorMsg);
+    /// raw_writer->write_error_frame(pTradingAccount, sizeof(CThostFtdcTradingAccountField), source_id, MSG_TYPE_LF_RSP_ACCOUNT_CTP, bIsLast, nRequestID, errorId, errorMsg);
 }

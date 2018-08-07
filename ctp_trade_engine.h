@@ -40,7 +40,7 @@ public:
     virtual void init();
     /** for settleconfirm and authenticate setting */
     /// virtual void pre_load(const json& j_config);
-    virtual TradeAccount load_account(int idx, std::string&);
+    virtual TradeAccount load_account(int idx, std::string);
     virtual void resize_accounts(int account_num);
     /** connect && login related */
     virtual void connect(long timeout_nsec);

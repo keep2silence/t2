@@ -1,6 +1,7 @@
 *.o
 *.a
 *.swp
+*.swo
 md_engine_test
 DialogRsp.con
 QueryRsp.con
