@@ -34,6 +34,12 @@ struct TradeAccount
     /// FeeHandlerPtr fee_handler;
 };
 
+class trade_engine_ctx
+{
+public:
+	std::string front_uri;
+};
+
 #endif
 
 class i_trade_engine 
@@ -42,7 +48,7 @@ public:
 	virtual ~i_trade_engine ()
 	{}
 
-	virtual void init (void *) = 0;
+	virtual void init (trade_engine_ctx* ctx_ptr) = 0;
 	virtual void start () = 0;
 	
 	bool register_trade_event_listner (trade_event_listener* listener_ptr)

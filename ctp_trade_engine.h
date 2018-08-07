@@ -37,10 +37,10 @@ class ctp_trade_engine : public i_trade_engine, public CThostFtdcTraderSpi
 public:
 	
     /** init internal journal writer (both raw and send) */
-    virtual void init();
+    virtual void init(trade_engine_ctx* ctx_ptr);
     /** for settleconfirm and authenticate setting */
     /// virtual void pre_load(const json& j_config);
-    virtual TradeAccount load_account(int idx, std::string);
+    virtual void load_account(int idx, std::string);
     virtual void resize_accounts(int account_num);
     /** connect && login related */
     virtual void connect(long timeout_nsec);
@@ -64,6 +64,7 @@ public:
     bool need_authenticate;
     int curAccountIdx;
     std::vector<AccountUnitCTP> account_units;
+	std::vector<TradeAccount> trade_accounts;
 
 public:
     // SPI
@@ -117,6 +118,9 @@ public:
     virtual void OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, 
 		CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
+private:
+	struct CThostFtdcInputOrderField order_req;
+	struct CThostFtdcInputOrderActionField order_action_req;
 };
 
 #endif

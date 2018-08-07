@@ -2,6 +2,10 @@
 #define __BASE_H__
 
 #include <stdio.h>
+#ifdef __CTP__
+/// 直接使用底层定义的变量值，这样在底层就不需要再做一次转换，提高速度
+#include "ThostFtdcUserApiDataType.h"
+#endif
 
 #ifdef NDEBUG
 #define pr_debug
@@ -32,20 +36,27 @@ do {\
 }\
 while (0)
 
+extern const char* direction_str[];
+
+#ifdef __CTP__
 typedef enum {
     d_unknown = 0,
-    d_buy,
-    d_sell
+    d_buy = THOST_FTDC_D_Buy,
+    d_sell = THOST_FTDC_D_Sell
 } direction_t;
-
-
-extern const char* direction_str[];
 
 typedef enum {
 	o_unknown = 0,
-	o_open,
-	o_offset
+	o_open = THOST_FTDC_OF_Open,
+	o_offset = THOST_FTDC_OF_Offset
 } offset_flag_t;
+
+typedef enum {
+	opt_unknown = 0,
+	opt_limit_price = THOST_FTDC_OPT_LimitPrice,
+	opt_market_price = THOST_FTDC_OPT_AnyPrice
+} order_price_type_t;
+#endif
 
 extern const char* offset_flag_str[];
 

@@ -1,37 +1,26 @@
 #include "ctp_trade_engine.h"
 #include "time_calc.h"
 #include <string.h>
+#include <strings.h>
 
-void ctp_trade_engine::init ()
+void ctp_trade_engine::init (trade_engine_ctx* ctx_ptr)
 {
+	front_uri = ctx_ptr->front_uri;
+
+	bzero (&order_req, sizeof (order_req));
+
+	bzero (&order_action_req, sizeof (order_action_req));
+
+	need_authenticate = true;
 	order_rsp_ptr = new order_rsp_info_t;
     cancel_rsp_ptr = new cancel_rsp_info_t;
     order_match_ptr = new order_match_info_t;
 }
 
-
-#if 0
-void ctp_trade_engine::pre_load(const json& j_config)
-{
-    front_uri = j_config[WC_CONFIG_KEY_FRONT_URI].get<string>();
-    if (j_config.find(WC_CONFIG_KEY_NEED_SETTLE_CONFIRM) != j_config.end()
-        && !j_config[WC_CONFIG_KEY_NEED_SETTLE_CONFIRM].get<bool>())
-    {
-        need_settleConfirm = false;
-        KF_LOG_INFO(logger, "[ATTENTION] no need to confirm settlement!");
-    }
-    if (j_config.find(WC_CONFIG_KEY_NEED_AUTH) != j_config.end()
-        && j_config[WC_CONFIG_KEY_NEED_AUTH].get<bool>())
-    {
-        need_authenticate = true;
-        KF_LOG_INFO(logger, "[ATTENTION] need to authenticate code!");
-    }
-}
-#endif
-
 void ctp_trade_engine::resize_accounts(int account_num)
 {
-    account_units.resize(account_num);
+    account_units.resize (account_num);
+	trade_accounts.resize (account_num);
 }
 
 static void split_to_vector (std::string& line, std::vector<std::string> &stdvec, char sep)
@@ -46,7 +35,7 @@ static void split_to_vector (std::string& line, std::vector<std::string> &stdvec
     stdvec.push_back (line);
 }
 
-TradeAccount ctp_trade_engine::load_account(int idx, std::string user_config_str)
+void ctp_trade_engine::load_account(int idx, std::string user_config_str)
 {
 	std::vector<std::string> user_config_vec;
 	split_to_vector (user_config_str, user_config_vec, ',');
@@ -69,12 +58,11 @@ TradeAccount ctp_trade_engine::load_account(int idx, std::string user_config_str
         unit.auth_code = user_config_vec[4];
 
     // set up
-    TradeAccount account = {};
+    TradeAccount& account = trade_accounts[idx];
     strncpy(account.BrokerID, broker_id.c_str(), 19);
     strncpy(account.InvestorID, investor_id.c_str(), 19);
     strncpy(account.UserID, user_id.c_str(), 16);
     strncpy(account.Password, password.c_str(), 21);
-    return account;
 }
 
 void ctp_trade_engine::connect(long timeout_nsec)
@@ -266,34 +254,76 @@ void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int accoun
 void ctp_trade_engine::req_order_insert(const order_t* order_ptr, 
 	int account_index, int requestId, long rcv_time)
 {
-    struct CThostFtdcInputOrderField req = parseTo(*data);
-    req.RequestID = requestId;
-    req.IsAutoSuspend = 0;
-    req.UserForceClose = 0;
-    pr_debug ("req_order_insert requestid: %d, invectorid: %s, instrumentid: %s, order_ref: %s.\n",
-		 requestId, req.InvestorID, req.InstrumentID, req.OrderRef);
+	TradeAccount& ta = trade_accounts[account_index];
+    memcpy (order_req.BrokerID, ta.BrokerID, 11);
+    memcpy (order_req.UserID, ta.UserID, 16);
+    memcpy (order_req.InvestorID, ta.InvestorID, 13);
+    memcpy (order_req.BusinessUnit, ta.BusinessUnit, 21);
+    memcpy (order_req.ExchangeID, ta.ExchangeID, 9);
+    memcpy (order_req.InstrumentID, ta.InstrumentID, 31);
+    memcpy (order_req.OrderRef, ta.OrderRef, 13);
 
-    if (account_units[account_index].api->ReqOrderInsert(&req, requestId))
+    order_req.Direction = order_ptr->direction;
+    order_req.OffsetFlag = order_ptr->offset;
+    order_req.HedgeFlag = THOST_FTDC_HF_Speculation; /// 投机
+
+    order_req.VolumeTotalOriginal = order_ptr->order_qty;
+    order_req.VolumeCondition = THOST_FTDC_VC_AV;
+    order_req.MinVolume = 1;
+    order_req.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
+
+    order_req.LimitPrice = order_ptr->price / 100.0;
+	if (order_ptr->order_price_type == THOST_FTDC_OPT_LimitPrice) { 
+		order_req.TimeCondition = THOST_FTDC_TC_GFD;
+	} else {
+		/// 市价单价格为０
+		order_req.TimeCondition = THOST_FTDC_TC_GFD;
+	}
+    order_req.OrderPriceType = order_ptr->order_price_type;
+
+    /// order_req.StopPrice = order_ptr->StopPrice;
+    /// order_req.ContingentCondition = order_ptr->ContingentCondition;
+
+    order_req.RequestID = requestId;
+    order_req.IsAutoSuspend = 0;
+    order_req.UserForceClose = 0;
+	
+    if (account_units[account_index].api->ReqOrderInsert(&order_req, requestId))
     {
         pr_error ("[request] order insert failed (rid: %d)\n", requestId);
     }
+
+    pr_debug ("req_order_insert requestid: %d, invectorid: %s, instrumentid: %s, order_ref: %s.\n",
+		 requestId, order_req.InvestorID, order_req.InstrumentID, order_req.OrderRef);
 }
 
-void ctp_trade_engine::req_order_action(const LFOrderActionField* data, int account_index, int requestId, long rcv_time)
+void ctp_trade_engine::req_order_action(int account_index, int requestId, long rcv_time)
 {
-    struct CThostFtdcInputOrderActionField req = parseTo(*data);
-    req.OrderActionRef = local_id ++;
+    /// struct CThostFtdcInputOrderActionField req = parseTo(*data);
+    order_action_req.OrderActionRef = local_id++;
     auto& unit = account_units[account_index];
-    req.FrontID = unit.front_id;
-    req.SessionID = unit.session_id;
-    pr_debug ("[req_order_action](requestid: %d, investorid: %s, order_ref: %s, OrderActionRef: %d)\n",
-			requestId, req.InvestorID, req.OrderRef, req.OrderActionRef);
+    order_action_req.FrontID = unit.front_id;
+    order_action_req.SessionID = unit.session_id;
 
-    if (unit.api->ReqOrderAction(&req, requestId))
+	TradeAccount& ta = trade_accounts[account_index];
+    memcpy (order_action_req.BrokerID, ta.BrokerID, 11);
+    memcpy (order_action_req.UserID, ta.UserID, 16);
+    memcpy (order_action_req.InvestorID, ta.InvestorID, 13);
+    memcpy (order_action_req.ExchangeID, ta.ExchangeID, 9);
+    memcpy (order_action_req.InstrumentID, ta.InstrumentID, 31);
+    memcpy (order_action_req.OrderRef, ta.OrderRef, 13);
+
+    res.RequestID = requestId;
+    res.ActionFlag = THOST_FTDC_AF_Delete;
+    /// res.LimitPrice = lf.LimitPrice;
+
+    if (unit.api->ReqOrderAction(&order_action_req, requestId))
     {
         pr_error ("[request] order action failed!(requestid: %d)", requestId);
     }
-
+    pr_debug ("[req_order_action](requestid: %d, investorid: %s, order_ref: %s, OrderActionRef: %d)\n",
+			requestId, order_action_req.InvestorID, 
+			order_action_req.OrderRef, order_action_req.OrderActionRef);
 }
 
 /*

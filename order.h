@@ -45,7 +45,11 @@ public:
 	uint32_t contract_no = 0;
 	direction_t direction = d_unknown;
 	offset_flag_t offset = o_unknown;
+	order_price_type_t order_price_type;
 	int order_qty = 0;
+	
+	/// 多账户同时运行，需要通过此索引来告诉底层一些基础信息
+	int account_index = -1;
 
 	/// double价格强制转为int32_t，double * 100，价格转为整形处理速度快
 	int price = 0;		
