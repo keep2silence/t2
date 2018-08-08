@@ -35,10 +35,13 @@ struct TradeAccount
     /// FeeHandlerPtr fee_handler;
 };
 
+#define MAX_ACCOUNT 32
 class trade_engine_ctx
 {
 public:
 	std::string front_uri;
+	TradeAccount ta[MAX_ACCOUNT];
+	int max_account = MAX_ACCOUNT;
 };
 
 #endif

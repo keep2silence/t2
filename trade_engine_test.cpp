@@ -32,12 +32,14 @@ main ()
 	auto trade_event_consumer_ptr = new trade_event_consumer;
 	trade_event_consumer_ptr->listener_name = std::string ("trade_consumer");
 	engine_ptr->register_trade_event_listener (trade_event_consumer_ptr);
-	std::vector<std::string> contract_vec;
-	contract_vec.push_back (std::string ("rb1901"));
 
 	trade_engine_ctx te_ctx;
 	/// te_ctx.front_uri = std::string ("tcp://180.168.146.187:10030");
 	te_ctx.front_uri = std::string ("tcp://180.168.146.187:10003");
+	snprintf (te_ctx.ta[0].BrokerID, 19, "9999");
+	snprintf (te_ctx.ta[0].UserID, 16, "032862");
+	snprintf (te_ctx.ta[0].Password, 21, "evergreen");
+	te_ctx.max_account = 1;
 	engine_ptr->init (&te_ctx);
 
 	printf ("start ok.\n");

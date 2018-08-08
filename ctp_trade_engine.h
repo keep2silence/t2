@@ -47,7 +47,7 @@ public:
     virtual void init(trade_engine_ctx* ctx_ptr);
     /** for settleconfirm and authenticate setting */
     /// virtual void pre_load(const json& j_config);
-    virtual void load_account(int idx, std::string);
+    virtual void load_account(int idx, TradeAccount& account);
     virtual void resize_accounts(int account_num);
     /** connect && login related */
     virtual void connect(long timeout_nsec);

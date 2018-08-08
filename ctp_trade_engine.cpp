@@ -5,7 +5,12 @@
 
 void ctp_trade_engine::init (trade_engine_ctx* ctx_ptr)
 {
+	resize_accounts (ctx_ptr->max_account);
 	front_uri = ctx_ptr->front_uri;
+
+	for (int i = 0; i < ctx_ptr->max_account; ++i) {
+		load_account (i, ctx_ptr->ta[i]);
+	}
 
 	bzero (&order_req, sizeof (order_req));
 
@@ -44,6 +49,7 @@ void ctp_trade_engine::resize_accounts(int account_num)
 	trade_accounts.resize (account_num);
 }
 
+#if 0
 static void split_to_vector (std::string& line, std::vector<std::string> &stdvec, char sep)
 {
     stdvec.clear ();
@@ -55,17 +61,9 @@ static void split_to_vector (std::string& line, std::vector<std::string> &stdvec
     }
     stdvec.push_back (line);
 }
-
-void ctp_trade_engine::load_account(int idx, std::string user_config_str)
+#endif
+void ctp_trade_engine::load_account(int idx, TradeAccount& account)
 {
-	std::vector<std::string> user_config_vec;
-	split_to_vector (user_config_str, user_config_vec, ',');
-    // internal load
-    std::string broker_id = user_config_vec[0];
-    std::string user_id = user_config_vec[1];
-    std::string investor_id = user_config_vec[2];
-    std::string password = user_config_vec[3];
-
     AccountUnitCTP& unit = account_units[idx];
     unit.api = nullptr;
     unit.front_id = -1;
@@ -75,15 +73,15 @@ void ctp_trade_engine::load_account(int idx, std::string user_config_str)
     unit.authenticated = false;
     unit.logged_in = false;
     unit.settle_confirmed = false;
+
+	need_authenticate = false;
+#if 0
     if (need_authenticate)
-        unit.auth_code = user_config_vec[4];
+        unit.auth_code = 
+#endif
 
     // set up
-    TradeAccount& account = trade_accounts[idx];
-    strncpy(account.BrokerID, broker_id.c_str(), 19);
-    strncpy(account.InvestorID, investor_id.c_str(), 19);
-    strncpy(account.UserID, user_id.c_str(), 16);
-    strncpy(account.Password, password.c_str(), 21);
+    trade_accounts[idx] = account;
 }
 
 void ctp_trade_engine::connect(long timeout_nsec)
