@@ -43,6 +43,7 @@ private:
 public:
 	int order_id = -1;
 	uint32_t contract_no = 0;
+	char contract_name[32] = {'\0'};
 	direction_t direction = d_unknown;
 	offset_flag_t offset = o_unknown;
 	order_price_type_t order_price_type;

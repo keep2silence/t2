@@ -55,8 +55,7 @@ public:
     virtual void req_investor_position(LFQryPositionField* data, int account_index, int requestId);
     virtual void req_qry_account(const LFQryAccountField* data, int account_index, int requestId);
     virtual void req_order_insert(const order_t* order_ptr, int account_index, int requestId, long rcv_time);
-    virtual void req_order_action(const LFOrderActionField* data, int account_index, int requestId, long rcv_time);
-
+    virtual void req_order_action(const order_t* order_ptr, int account_index, int requestId, long rcv_time);
 
     // from config
     std::string front_uri;

@@ -5,6 +5,7 @@
 #ifdef __CTP__
 /// 直接使用底层定义的变量值，这样在底层就不需要再做一次转换，提高速度
 #include "ThostFtdcUserApiDataType.h"
+#include "ThostFtdcUserApiStruct.h"
 #endif
 
 #ifdef NDEBUG
@@ -48,7 +49,7 @@ typedef enum {
 typedef enum {
 	o_unknown = 0,
 	o_open = THOST_FTDC_OF_Open,
-	o_offset = THOST_FTDC_OF_Offset
+	o_offset = THOST_FTDC_OF_Close
 } offset_flag_t;
 
 typedef enum {

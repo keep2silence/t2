@@ -25,6 +25,7 @@ main ()
 	contract_vec.push_back (std::string ("rb1901"));
 	engine_ptr->init (std::string ("9999"), std::string ("032862"), 
 		std::string ("evergeen"), std::string ("tcp://180.168.146.187:10013"));
+		/// std::string ("evergeen"), std::string ("tcp://180.168.146.187:10031"));
 	engine_ptr->start ();
 	engine_ptr->subscribe_md (contract_vec);
 

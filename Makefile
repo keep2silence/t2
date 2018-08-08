@@ -1,4 +1,4 @@
-CPPFLAGS=-g -I./api/ctp/latest/include/ -std=c++11 -Wall -Wextra -Wno-unused-parameter
+CPPFLAGS=-g -I./api/ctp/latest/include/ -std=c++11 -Wall -Wextra -Wno-unused-parameter -D__CTP__
 
 all: libengine.a md_engine_test
 

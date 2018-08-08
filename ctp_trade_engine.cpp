@@ -259,13 +259,13 @@ void ctp_trade_engine::req_order_insert(const order_t* order_ptr,
     memcpy (order_req.UserID, ta.UserID, 16);
     memcpy (order_req.InvestorID, ta.InvestorID, 13);
     memcpy (order_req.BusinessUnit, ta.BusinessUnit, 21);
-    memcpy (order_req.ExchangeID, ta.ExchangeID, 9);
-    memcpy (order_req.InstrumentID, ta.InstrumentID, 31);
-    memcpy (order_req.OrderRef, ta.OrderRef, 13);
+    /// memcpy (order_req.ExchangeID, ta.ExchangeID, 9);
+    memcpy (order_req.InstrumentID, order_ptr->contract_name, 31);
+    snprintf (order_req.OrderRef, 13, "%d", local_id++);
 
     order_req.Direction = order_ptr->direction;
-    order_req.OffsetFlag = order_ptr->offset;
-    order_req.HedgeFlag = THOST_FTDC_HF_Speculation; /// 投机
+    order_req.CombOffsetFlag[0] = order_ptr->offset;
+    order_req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation; /// 投机
 
     order_req.VolumeTotalOriginal = order_ptr->order_qty;
     order_req.VolumeCondition = THOST_FTDC_VC_AV;
@@ -297,7 +297,8 @@ void ctp_trade_engine::req_order_insert(const order_t* order_ptr,
 		 requestId, order_req.InvestorID, order_req.InstrumentID, order_req.OrderRef);
 }
 
-void ctp_trade_engine::req_order_action(int account_index, int requestId, long rcv_time)
+void ctp_trade_engine::req_order_action(const order_t* order_ptr, 
+	int account_index, int requestId, long rcv_time)
 {
     /// struct CThostFtdcInputOrderActionField req = parseTo(*data);
     order_action_req.OrderActionRef = local_id++;
@@ -309,12 +310,12 @@ void ctp_trade_engine::req_order_action(int account_index, int requestId, long r
     memcpy (order_action_req.BrokerID, ta.BrokerID, 11);
     memcpy (order_action_req.UserID, ta.UserID, 16);
     memcpy (order_action_req.InvestorID, ta.InvestorID, 13);
-    memcpy (order_action_req.ExchangeID, ta.ExchangeID, 9);
-    memcpy (order_action_req.InstrumentID, ta.InstrumentID, 31);
-    memcpy (order_action_req.OrderRef, ta.OrderRef, 13);
+    /// memcpy (order_action_req.ExchangeID, ta.ExchangeID, 9);
+    memcpy (order_action_req.InstrumentID, order_ptr->contract_name, 31);
+    snprintf (order_action_req.OrderRef, 13, "%d", local_id++);
 
-    res.RequestID = requestId;
-    res.ActionFlag = THOST_FTDC_AF_Delete;
+    order_action_req.RequestID = requestId;
+    order_action_req.ActionFlag = THOST_FTDC_AF_Delete;
     /// res.LimitPrice = lf.LimitPrice;
 
     if (unit.api->ReqOrderAction(&order_action_req, requestId))
