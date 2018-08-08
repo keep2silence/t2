@@ -370,7 +370,8 @@ void ctp_trade_engine::OnFrontDisconnected(int nReason)
 }
 
 
-#define GBK2UTF8(msg) util.gbk2utf8(std::string(msg))
+/// #define GBK2UTF8(msg) util.gbk2utf8(std::string(msg))
+#define GBK2UTF8(msg) (std::string (msg))
 
 
 void ctp_trade_engine::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField,
@@ -378,8 +379,8 @@ void ctp_trade_engine::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAut
 {
     if (pRspInfo != nullptr && pRspInfo->ErrorID != 0)
     {
-        pr_error ("[OnRspAuthenticate] (errId: %d), errMsg: %s\n",
-			 pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str ());
+        pr_error ("[OnRspAuthenticate] (errId: %d), errMsg: %s, errid: %d\n",
+			 pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str (), pRspInfo->ErrorID);
     }
     else
     {
@@ -399,8 +400,8 @@ void ctp_trade_engine::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin
 {
     if (pRspInfo != nullptr && pRspInfo->ErrorID != 0)
     {
-        pr_error ("[OnRspUserLogin](errId: %d), err_msg: %s\n",
-			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str ());
+        pr_error ("[OnRspUserLogin](errId: %d), err_msg: %s, errid: %d\n",
+			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str (), pRspInfo->ErrorID);
     }
     else
     {
@@ -426,8 +427,8 @@ void ctp_trade_engine::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfir
 {
     if (pRspInfo != nullptr && pRspInfo->ErrorID != 0)
     {
-        pr_error ("[OnRspSettlementInfoConfirm](errId: %d), err_msg: %s\n",
-			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str ());
+        pr_error ("[OnRspSettlementInfoConfirm](errId: %d), err_msg: %s, errid: %d\n",
+			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str (), pRspInfo->ErrorID);
     }
     else
     {
@@ -449,8 +450,8 @@ void ctp_trade_engine::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, C
 {
     if (pRspInfo != nullptr && pRspInfo->ErrorID == 0)
     {
-        pr_error ("[OnRspUserLogout] (errId: %d), errMsg: %s\n", 
-			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str ());
+        pr_error ("[OnRspUserLogout] (errId: %d), errMsg: %s, errid: %d\n", 
+			pRspInfo->ErrorID, GBK2UTF8(pRspInfo->ErrorMsg).c_str (), pRspInfo->ErrorID);
     }
     else
     {
@@ -477,7 +478,8 @@ void ctp_trade_engine::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder,
 	order_rsp.success = (errorId == 0);
 
 	if (errorId != 0) {
-		pr_error ("order: %s, err: %s\n", pInputOrder->OrderRef, GBK2UTF8(errorMsg).c_str ());
+		pr_error ("order: %s, err: %s, errid: %d\n", 
+			pInputOrder->OrderRef, GBK2UTF8(errorMsg).c_str (), pRspInfo->ErrorID);
 	}
 	
 	for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
@@ -498,7 +500,8 @@ void ctp_trade_engine::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputO
 	cancel_rsp.success = false;
 	cancel_rsp.cancel_qty = 0;
 
-	pr_error ("order_id: %s, errMsg: %s\n", pInputOrderAction->OrderRef, GBK2UTF8(errorMsg).c_str ());
+	pr_error ("order_id: %s, errMsg: %s, errid: %d\n", 
+		pInputOrderAction->OrderRef, GBK2UTF8(errorMsg).c_str (), pRspInfo->ErrorID);
 	
 	/// 撤单失败也通知给上层
 	for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
