@@ -7,3 +7,7 @@ DialogRsp.con
 QueryRsp.con
 TradingDay.con
 core
+
+md_engine_test.10013
+md_engine_test.10031
+trade_engine_test

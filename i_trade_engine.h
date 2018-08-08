@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "base.h"
+#include "order.h"
 
 class trade_event_listener
 {
@@ -49,9 +50,9 @@ public:
 	{}
 
 	virtual void init (trade_engine_ctx* ctx_ptr) = 0;
-	virtual void start () = 0;
+	/// virtual void start () = 0;
 	
-	bool register_trade_event_listner (trade_event_listener* listener_ptr)
+	bool register_trade_event_listener (trade_event_listener* listener_ptr)
 	{
 		if (listener_ptr == nullptr) {
 			return false;
@@ -68,6 +69,8 @@ public:
 		trade_event_listener_vec.push_back (listener_ptr);
 		pr_info ("listener: %s register ok.\n",
 				listener_ptr->listener_name.c_str ());
+
+		return true;
 	}
 
 public:
@@ -88,10 +91,10 @@ public:
     virtual bool is_logged_in() const = 0;
 
 	/// 查询持仓
-	virtual int query_posi (int account_id) = 0;
+	/// virtual int query_posi (int account_id) = 0;
 	
 	/// 下单
-	virtual int place_order (int contract_id, direction_t direction, 
+	virtual int place_order (const char* contract_name, direction_t direction, 
 		offset_flag_t offset, price_t price, int qty) = 0;
 
 	/// 撤单
@@ -111,6 +114,7 @@ protected:
 	order_rsp_info_t order_rsp;
 	cancel_rsp_info_t cancel_rsp;
 	order_match_info_t match_rsp;
+
 };
 
 #endif

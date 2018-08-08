@@ -36,6 +36,13 @@ class ctp_trade_engine : public i_trade_engine, public CThostFtdcTraderSpi
 {
 public:
 	
+	/// 下单
+    virtual int place_order (const char* contract_name, direction_t direction,
+        offset_flag_t offset, price_t price, int qty);
+
+    /// 撤单
+    virtual int cancel_order (int order_id);
+
     /** init internal journal writer (both raw and send) */
     virtual void init(trade_engine_ctx* ctx_ptr);
     /** for settleconfirm and authenticate setting */
@@ -52,7 +59,7 @@ public:
     virtual std::string name() const { return "ctp_trade_engine"; };
 
 	// req functions
-    virtual void req_investor_position(LFQryPositionField* data, int account_index, int requestId);
+    virtual void req_investor_position(const LFQryPositionField* data, int account_index, int requestId);
     virtual void req_qry_account(const LFQryAccountField* data, int account_index, int requestId);
     virtual void req_order_insert(const order_t* order_ptr, int account_index, int requestId, long rcv_time);
     virtual void req_order_action(const order_t* order_ptr, int account_index, int requestId, long rcv_time);

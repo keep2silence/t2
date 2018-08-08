@@ -14,6 +14,30 @@ void ctp_trade_engine::init (trade_engine_ctx* ctx_ptr)
 	need_authenticate = true;
 }
 
+int ctp_trade_engine::place_order (const char* contract_name, direction_t direction,
+        offset_flag_t offset, price_t price, int qty)
+{
+	int rcv_time = 0;
+	order_t order_req;
+
+	snprintf (order_req.contract_name, 32, "%s", contract_name);
+	order_req.direction = direction;
+	order_req.offset = offset;
+	order_req.price = price;
+	order_req.order_qty = qty;
+
+	int account_index = 0;
+	int requestId = 0;
+	req_order_insert(&order_req, account_index, requestId, rcv_time);
+	return 0;
+}
+
+int ctp_trade_engine::cancel_order (int order_id)
+{
+
+	return 0;
+}
+
 void ctp_trade_engine::resize_accounts(int account_num)
 {
     account_units.resize (account_num);
@@ -217,12 +241,12 @@ bool ctp_trade_engine::is_connected() const
     return true;
 }
 
-#if 0
 /**
  * req functions
  */
 void ctp_trade_engine::req_investor_position(const LFQryPositionField* data, int account_index, int requestId)
 {
+#if 0
     struct CThostFtdcQryInvestorPositionField req = parseTo(*data);
     pr_debug ("[req_pos](Broker_id: %d, investorid: %d, Instrumentid: %d)",
 		req.BrokerID, req.InvestorID, req.InstrumentID);
@@ -232,10 +256,12 @@ void ctp_trade_engine::req_investor_position(const LFQryPositionField* data, int
         pr_error ("[request] investor position failed! (rid: %d), account_idx: %d", 
 			requestId, account_index);
     }
+#endif
 }
 
 void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int account_index, int requestId)
 {
+#if 0
     struct CThostFtdcQryTradingAccountField req = parseTo(*data);
     pr_debug ("[req_account]" << " (Bid)" << req.BrokerID
                                          << " (Iid)" << req.InvestorID);
@@ -245,8 +271,8 @@ void ctp_trade_engine::req_qry_account(const LFQryAccountField *data, int accoun
         pr_error ("[request] account info failed!" << " (rid)" << requestId
                                                               << " (idx)" << account_index);
     }
-}
 #endif
+}
 
 void ctp_trade_engine::req_order_insert(const order_t* order_ptr, 
 	int account_index, int requestId, long rcv_time)
