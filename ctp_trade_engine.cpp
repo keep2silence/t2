@@ -12,9 +12,6 @@ void ctp_trade_engine::init (trade_engine_ctx* ctx_ptr)
 	bzero (&order_action_req, sizeof (order_action_req));
 
 	need_authenticate = true;
-	order_rsp_ptr = new order_rsp_info_t;
-    cancel_rsp_ptr = new cancel_rsp_info_t;
-    order_match_ptr = new order_match_info_t;
 }
 
 void ctp_trade_engine::resize_accounts(int account_num)
@@ -448,29 +445,46 @@ void ctp_trade_engine::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, C
 void ctp_trade_engine::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, 
 	CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
-    int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
     const char* errorMsg = (pRspInfo == nullptr) ? nullptr : pRspInfo->ErrorMsg;
-    auto data = parseFrom(*pInputOrder);
-    on_rsp_order_insert(&data, nRequestID, errorId, errorMsg);
+	order_rsp.order_id = atoi (pInputOrder->OrderRef);
+    int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
+	order_rsp.success = (errorId == 0);
+
+	if (errorId != 0) {
+		pr_error ("order: %s, err: %s\n", pInputOrder->OrderRef, errorMsg);
+	}
 	
 	for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
-		trade_event_listener_vec[i]->handle_order_rsp (order_rsp_ptr);
+		trade_event_listener_vec[i]->handle_order_rsp (&order_rsp);
 	}
 }
 
+/// OnRspOrderAction:撤单响应。交易核心返回的含有错误信息的撤单响应。
 void ctp_trade_engine::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOrderAction,
                                    CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
-    int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
-    const char* errorMsg = (pRspInfo == nullptr) ? nullptr : EngineUtil::gbkErrorMsg2utf8(pRspInfo->ErrorMsg);
-    auto data = parseFrom(*pInputOrderAction);
-    on_rsp_order_action(&data, nRequestID, errorId, errorMsg);
+    /// int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
+    const char* errorMsg = (pRspInfo == nullptr) ? nullptr : (pRspInfo->ErrorMsg);
+    /// auto data = parseFrom(*pInputOrderAction);
+    /// on_rsp_order_action(&data, nRequestID, errorId, errorMsg);
+
+	cancel_rsp.order_id = atoi (pInputOrderAction->OrderRef);
+	cancel_rsp.success = false;
+	cancel_rsp.cancel_qty = 0;
+
+	pr_error ("order_id: %s, errMsg: %s\n", pInputOrderAction->OrderRef, errorMsg);
+	
+	/// 撤单失败也通知给上层
+	for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
+		trade_event_listener_vec[i]->handle_cancel_rsp (&cancel_rsp);
+	}
     /// raw_writer->write_error_frame(pInputOrderAction, sizeof(CThostFtdcInputOrderActionField), source_id, MSG_TYPE_LF_ORDER_ACTION_CTP, bIsLast, nRequestID, errorId, errorMsg);
 }
 
 void ctp_trade_engine::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo,
                                      int nRequestID, bool bIsLast)
 {
+#if 0
     int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
     const char* errorMsg = (pRspInfo == nullptr) ? nullptr : EngineUtil::gbkErrorMsg2utf8(pRspInfo->ErrorMsg);
     CThostFtdcInvestorPositionField emptyCtp = {};
@@ -479,21 +493,47 @@ void ctp_trade_engine::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField 
     auto pos = parseFrom(*pInvestorPosition);
     on_rsp_position(&pos, bIsLast, nRequestID, errorId, errorMsg);
     /// raw_writer->write_error_frame(pInvestorPosition, sizeof(CThostFtdcInvestorPositionField), source_id, MSG_TYPE_LF_RSP_POS_CTP, bIsLast, nRequestID, errorId, errorMsg);
+#endif
 }
 
+/// 报单回报主要作用是通知客户端该报单的最新状态,如已提交,已撤销,未触发,已成交等。
+/// 每次报单状态有变化,该函数都会被调用一次
 void ctp_trade_engine::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
-    auto rtn_order = parseFrom(*pOrder);
-    on_rtn_order(&rtn_order);
+    /// auto rtn_order = parseFrom(*pOrder);
+    /// on_rtn_order(&rtn_order);
     /// raw_writer->write_frame(pOrder, sizeof(CThostFtdcOrderField),
      ///                       source_id, MSG_TYPE_LF_RTN_ORDER_CTP,
         ///                    1/*islast*/, (pOrder->RequestID > 0) ? pOrder->RequestID: -1);
+
+	switch (pOrder->OrderStatus) {
+		case THOST_FTDC_OST_Canceled: /// 撤单
+			/// 撤单回报撤单成功，撤单失败在OnRspOrderAction返回
+			cancel_rsp.success = true;
+			cancel_rsp.order_id = atoi (pOrder->OrderRef);
+			for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
+				trade_event_listener_vec[i]->handle_cancel_rsp (&cancel_rsp);
+			}
+			break;
+		default:
+			pr_debug ("OnOrderRtn OrderStatus: %d\n", pOrder->OrderStatus);
+	}
+
 }
 
 void ctp_trade_engine::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
-    auto rtn_trade = parseFrom(*pTrade);
-    on_rtn_trade(&rtn_trade);
+    /// auto rtn_trade = parseFrom(*pTrade);
+	
+	/// 处理成交
+	match_rsp.order_id = atoi (pTrade->OrderRef);
+	match_rsp.match_qty = pTrade->Volume;
+	match_rsp.match_price = pTrade->Price * 100;
+
+	for (size_t i = 0; i < trade_event_listener_vec.size (); ++i) {
+		trade_event_listener_vec[i]->handle_match_rsp (&match_rsp);
+	}
+    /// on_rtn_trade(&rtn_trade);
     /// raw_writer->write_frame(pTrade, sizeof(CThostFtdcTradeField),
        ///                     source_id, MSG_TYPE_LF_RTN_TRADE_CTP, 1/*islast*/, -1/*invalidRid*/);
 }
@@ -501,6 +541,7 @@ void ctp_trade_engine::OnRtnTrade(CThostFtdcTradeField *pTrade)
 void ctp_trade_engine::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount,
                                          CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+#if 0
     int errorId = (pRspInfo == nullptr) ? 0 : pRspInfo->ErrorID;
     const char* errorMsg = (pRspInfo == nullptr) ? nullptr : EngineUtil::gbkErrorMsg2utf8(pRspInfo->ErrorMsg);
     CThostFtdcTradingAccountField empty = {};
@@ -509,4 +550,5 @@ void ctp_trade_engine::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTr
     auto account = parseFrom(*pTradingAccount);
     on_rsp_account(&account, bIsLast, nRequestID, errorId, errorMsg);
     /// raw_writer->write_error_frame(pTradingAccount, sizeof(CThostFtdcTradingAccountField), source_id, MSG_TYPE_LF_RSP_ACCOUNT_CTP, bIsLast, nRequestID, errorId, errorMsg);
+#endif
 }

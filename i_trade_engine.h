@@ -108,9 +108,9 @@ protected:
     long cur_time;
 	int account_id;
 
-	order_rsp_info_t* order_rsp_ptr = nullptr;
-	cancel_rsp_info_t* cancel_rsp_ptr = nullptr;
-	order_match_info_t* order_match_ptr = nullptr;
+	order_rsp_info_t order_rsp;
+	cancel_rsp_info_t cancel_rsp;
+	order_match_info_t match_rsp;
 };
 
 #endif

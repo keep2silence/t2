@@ -79,7 +79,9 @@ public:
 class order_match_info_t
 {
 public:
-
+	int order_id;
+	int match_qty;
+	int match_price;
 };
 
 struct LFQryPositionField
