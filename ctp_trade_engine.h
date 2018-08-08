@@ -6,6 +6,7 @@
 #include "i_trade_engine.h"
 #include "base.h"
 #include "order.h"
+#include "iconv_util.h"
 
 /**
  * account information unit extra for CTP is here.
@@ -35,7 +36,19 @@ struct AccountUnitCTP
 class ctp_trade_engine : public i_trade_engine, public CThostFtdcTraderSpi
 {
 public:
-	
+	void start ()
+	{
+		connect (1000l * 1000l * 1000l);
+		if (is_connected () == false) {
+			pr_info ("connect err.\n");
+			return;
+		}
+		login (1000l * 1000l * 1000l);
+		if (is_logged_in () == false) {
+			pr_info ("connect err.\n");
+			return;
+		}
+	}
 	/// 下单
     virtual int place_order (const char* contract_name, direction_t direction,
         offset_flag_t offset, price_t price, int qty);
@@ -127,6 +140,8 @@ public:
 private:
 	struct CThostFtdcInputOrderField order_req;
 	struct CThostFtdcInputOrderActionField order_action_req;
+
+	iconv_util util;
 };
 
 #endif

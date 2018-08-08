@@ -42,6 +42,11 @@ main ()
 	te_ctx.max_account = 1;
 	engine_ptr->init (&te_ctx);
 
+	engine_ptr->start ();
+
+	/// 测试下单
+	engine_ptr->place_order ("i1901", d_buy, o_open, 4401, 100);
+
 	printf ("start ok.\n");
 	for (;;) {
 		sleep (100000);

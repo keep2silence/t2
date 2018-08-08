@@ -53,7 +53,7 @@ public:
 	{}
 
 	virtual void init (trade_engine_ctx* ctx_ptr) = 0;
-	/// virtual void start () = 0;
+	virtual void start () = 0;
 	
 	bool register_trade_event_listener (trade_event_listener* listener_ptr)
 	{
@@ -105,7 +105,6 @@ public:
 
 protected:
 	std::vector<trade_event_listener *> trade_event_listener_vec;
-	std::vector<TradeAccount> accounts;
     /** request_id, incremental*/
     int request_id;
     /** local id, incremental */
